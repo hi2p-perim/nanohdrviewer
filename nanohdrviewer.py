@@ -20,9 +20,10 @@
 #
 
 import os
+import sys
 import array
 import numpy as np
-import smc.freeimage as fi
+import imageio
 from PyQt5.QtCore import QDir, Qt, pyqtSignal, QMimeData, QFileSystemWatcher
 from PyQt5.QtGui import QImage, QPixmap, QPalette
 from PyQt5.QtWidgets import (
@@ -81,20 +82,9 @@ class ImageLabel(QLabel):
 		return True
 
 	def loadHDRImage(self, filename):
-		try:
-			# Load image
-			img = fi.Image(filename).flipVertical()
-			floats = array.array("f", img.getRaw())
-			imageArray = np.array(floats).reshape((img.width, img.height, 3))
-
-			# HDR compression
-			imageArray_RGB8 = (np.clip(np.power(imageArray, 1/2.2), 0, 1) * 255).astype(np.uint8)
-
-			# Convert to QImage
-			return QImage(imageArray_RGB8.tostring(), img.width, img.height, QImage.Format_RGB888)
-
-		except fi.FreeImageError:
-			return None
+		img = imageio.v2.imread(filename)
+		img = (np.clip(np.power(img, 1.0/2.2), 0.0, 1.0) * 255.0).astype(np.uint8)
+		return QImage(img.tostring(), img.shape[1], img.shape[0], QImage.Format_RGB888)
 
 	def onFileChanged(self, path):
 		if os.path.isfile(path):
@@ -132,7 +122,8 @@ class HDRImageViewer(QMainWindow):
 
 		# Title and initial window size
 		self.setWindowTitle("hdrviewer")
-		self.setFixedSize(200, 200)
+		self.setFixedSize(1024, 1024)
+		self.setWindowFlags(Qt.WindowStaysOnTopHint)
 
 	def open(self):
 		filename, _ = QFileDialog.getOpenFileName(self, "Open File", QDir.currentPath(), "HDR Image (*.hdr, *.exr)")
@@ -141,7 +132,6 @@ class HDRImageViewer(QMainWindow):
 				QMessageBox.information(self, "hdrviewer", "Failed to load %s" % filename)
 
 if __name__ == '__main__':
-	import sys
 	app = QApplication(sys.argv)
 	viewer = HDRImageViewer()
 	viewer.show()

@@ -19,3 +19,13 @@ Dependency
 * numpy
 * smc.freeimage
 * PyQt5
+
+
+How to run
+--------------------
+```
+$ conda create -n hdrview python=3.10 -y
+$ conda activate hdrview
+$ pip install imageio PyQt5
+$ Python nanohdrviewer.py
+```
